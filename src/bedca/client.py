@@ -4,7 +4,8 @@ import xml.etree.ElementTree as ET
 from typing import List
 import requests
 
-from .models import FoodPreview
+from .models import FoodPreview, Food
+from .parser import parse_food_response
 from .query import get_all_foods_query, get_food_by_id_query
 
 
@@ -45,7 +46,7 @@ class BedcaClient:
             for food in root.findall("food")
         ]
 
-    def get_food_by_id(self, food_id: int) -> ET.Element:
+    def get_food_by_id(self, food_id: int) -> Food:
         """Get detailed information about a specific food by its ID.
         
         Args:
@@ -62,4 +63,4 @@ class BedcaClient:
         response = self.session.post(self.BASE_URL, headers=self.headers, data=payload)
         response.raise_for_status()
         
-        return ET.fromstring(response.text)
+        return parse_food_response(response.text)

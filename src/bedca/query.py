@@ -1,83 +1,10 @@
 """Query builder for BEDCA API."""
 
-from enum import StrEnum
 from xml.dom import minidom
 from typing import List, Optional
 import xml.etree.ElementTree as ET
 
-
-class BedcaAttribute(StrEnum):
-    """Attributes available in BEDCA API."""
-    
-    # Food attributes
-    ID = "f_id"
-    SPANISH_NAME = "f_ori_name"
-    ENGLISH_NAME = "f_eng_name"
-    SCIENTIFIC_NAME = "sci_name"
-    LANGUAL = "langual"
-    FOODEX_CODE = "foodexcode"
-    MAIN_LEVEL_CODE = "mainlevelcode"
-    CODE_LEVEL_1 = "codlevel1"
-    NAME_LEVEL_1 = "namelevel1"
-    CODE_SUBLEVEL = "codsublevel"
-    CODE_LEVEL_2 = "codlevel2"
-    NAME_LEVEL_2 = "namelevel2"
-    DESCRIPTION_ES = "f_des_esp"
-    DESCRIPTION_EN = "f_des_ing"
-    PHOTO = "photo"
-    EDIBLE_PORTION = "edible_portion"
-    ORIGIN = "f_origen"
-    PUBLIC = "publico"
-    
-    # Component attributes
-    COMPONENT_ID = "c_id"
-    COMPONENT_NAME_ES = "c_ori_name"
-    COMPONENT_NAME_EN = "c_eng_name"
-    EURNAME = "eur_name"
-    COMPONENT_GROUP_ID = "componentgroup_id"
-    GLOSSARY_ES = "glos_esp"
-    GLOSSARY_EN = "glos_ing"
-    GROUP_NAME_ES = "cg_descripcion"
-    GROUP_NAME_EN = "cg_description"
-    BEST_LOCATION = "best_location"
-    VALUE_UNIT = "v_unit"
-    MOEX = "moex"
-    STANDARD_DEVIATION = "stdv"
-    MIN_VALUE = "min"
-    MAX_VALUE = "max"
-    N_VALUE = "v_n"
-    UNIT_ID = "u_id"
-    UNIT_NAME_ES = "u_descripcion"
-    UNIT_NAME_EN = "u_description"
-    VALUE_TYPE = "value_type"
-    VALUE_TYPE_DESC_ES = "vt_descripcion"
-    VALUE_TYPE_DESC_EN = "vt_description"
-    MEASURE_UNIT_ID = "mu_id"
-    MEASURE_UNIT_DESC_ES = "mu_descripcion"
-    MEASURE_UNIT_DESC_EN = "mu_description"
-    REFERENCE_ID = "ref_id"
-    CITATION = "citation"
-    ACQUISITION_TYPE_ES = "at_descripcion"
-    ACQUISITION_TYPE_EN = "at_description"
-    PUBLICATION_TYPE_ES = "pt_descripcion"
-    PUBLICATION_TYPE_EN = "pt_description"
-    METHOD_ID = "method_id"
-    METHOD_TYPE_ES = "mt_descripcion"
-    METHOD_TYPE_EN = "mt_description"
-    METHOD_DESC_ES = "m_descripcion"
-    METHOD_DESC_EN = "m_description"
-    METHOD_NAME_ES = "m_nom_esp"
-    METHOD_NAME_EN = "m_nom_ing"
-    METHOD_HEADER_ES = "mhd_descripcion"
-    METHOD_HEADER_EN = "mhd_description"
-
-
-class BedcaRelation(StrEnum):
-    """Relation types for BEDCA query conditions."""
-    
-    EQUAL = "EQUAL"
-    LIKE = "LIKE"
-    BEGINS_WITH = "BEGINW"
+from .enums import BedcaAttribute, BedcaRelation
 
 
 class BedcaQueryBuilder:
@@ -187,10 +114,8 @@ def get_all_foods_query() -> str:
         .select(
             BedcaAttribute.ID,
             BedcaAttribute.SPANISH_NAME,
-            BedcaAttribute.LANGUAL,
             BedcaAttribute.ENGLISH_NAME,
             BedcaAttribute.ORIGIN,
-            BedcaAttribute.EDIBLE_PORTION
         )
         .where(BedcaAttribute.ORIGIN, BedcaRelation.EQUAL, "BEDCA")
         .order(BedcaAttribute.SPANISH_NAME)
@@ -216,7 +141,3 @@ def get_food_by_id_query(food_id: int) -> str:
         .order(BedcaAttribute.COMPONENT_GROUP_ID)
         .build()
     )
-
-
-if __name__ == "__main__":
-    print(get_all_foods_query())
