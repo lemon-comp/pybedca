@@ -9,12 +9,67 @@ import xml.etree.ElementTree as ET
 class BedcaAttribute(StrEnum):
     """Attributes available in BEDCA API."""
     
+    # Food attributes
     ID = "f_id"
     SPANISH_NAME = "f_ori_name"
     ENGLISH_NAME = "f_eng_name"
+    SCIENTIFIC_NAME = "sci_name"
     LANGUAL = "langual"
-    ORIGIN = "f_origen"
+    FOODEX_CODE = "foodexcode"
+    MAIN_LEVEL_CODE = "mainlevelcode"
+    CODE_LEVEL_1 = "codlevel1"
+    NAME_LEVEL_1 = "namelevel1"
+    CODE_SUBLEVEL = "codsublevel"
+    CODE_LEVEL_2 = "codlevel2"
+    NAME_LEVEL_2 = "namelevel2"
+    DESCRIPTION_ES = "f_des_esp"
+    DESCRIPTION_EN = "f_des_ing"
+    PHOTO = "photo"
     EDIBLE_PORTION = "edible_portion"
+    ORIGIN = "f_origen"
+    PUBLIC = "publico"
+    
+    # Component attributes
+    COMPONENT_ID = "c_id"
+    COMPONENT_NAME_ES = "c_ori_name"
+    COMPONENT_NAME_EN = "c_eng_name"
+    EURNAME = "eur_name"
+    COMPONENT_GROUP_ID = "componentgroup_id"
+    GLOSSARY_ES = "glos_esp"
+    GLOSSARY_EN = "glos_ing"
+    GROUP_NAME_ES = "cg_descripcion"
+    GROUP_NAME_EN = "cg_description"
+    BEST_LOCATION = "best_location"
+    VALUE_UNIT = "v_unit"
+    MOEX = "moex"
+    STANDARD_DEVIATION = "stdv"
+    MIN_VALUE = "min"
+    MAX_VALUE = "max"
+    N_VALUE = "v_n"
+    UNIT_ID = "u_id"
+    UNIT_NAME_ES = "u_descripcion"
+    UNIT_NAME_EN = "u_description"
+    VALUE_TYPE = "value_type"
+    VALUE_TYPE_DESC_ES = "vt_descripcion"
+    VALUE_TYPE_DESC_EN = "vt_description"
+    MEASURE_UNIT_ID = "mu_id"
+    MEASURE_UNIT_DESC_ES = "mu_descripcion"
+    MEASURE_UNIT_DESC_EN = "mu_description"
+    REFERENCE_ID = "ref_id"
+    CITATION = "citation"
+    ACQUISITION_TYPE_ES = "at_descripcion"
+    ACQUISITION_TYPE_EN = "at_description"
+    PUBLICATION_TYPE_ES = "pt_descripcion"
+    PUBLICATION_TYPE_EN = "pt_description"
+    METHOD_ID = "method_id"
+    METHOD_TYPE_ES = "mt_descripcion"
+    METHOD_TYPE_EN = "mt_description"
+    METHOD_DESC_ES = "m_descripcion"
+    METHOD_DESC_EN = "m_description"
+    METHOD_NAME_ES = "m_nom_esp"
+    METHOD_NAME_EN = "m_nom_ing"
+    METHOD_HEADER_ES = "mhd_descripcion"
+    METHOD_HEADER_EN = "mhd_description"
 
 
 class BedcaRelation(StrEnum):
@@ -28,19 +83,24 @@ class BedcaRelation(StrEnum):
 class BedcaQueryBuilder:
     """Builder for BEDCA API queries."""
     
-    def __init__(self):
-        """Initialize the query builder."""
+    def __init__(self, level: int = 1):
+        """Initialize the query builder.
+        
+        Args:
+            level: The type level of the query (1 for basic food list, 2 for detailed food info)
+        """
         self.root = ET.Element("foodquery")
         
-        # Add default type level
+        # Add type level
         type_elem = ET.SubElement(self.root, "type")
-        type_elem.set("level", "1")
+        type_elem.set("level", str(level))
         
         # Initialize selection element
         self.selection = ET.SubElement(self.root, "selection")
         
-        # Always add the BEDCA origin condition
-        self.where(BedcaAttribute.ORIGIN, BedcaRelation.EQUAL, "BEDCA")
+        # Always add the public condition for detailed queries
+        if level == 2:
+            self.where(BedcaAttribute.PUBLIC, BedcaRelation.EQUAL, "1")
     
     def select(self, *attributes: BedcaAttribute) -> "BedcaQueryBuilder":
         """Add attributes to select in the query.
@@ -108,7 +168,7 @@ class BedcaQueryBuilder:
         Returns:
             str: The XML query string with proper formatting.
         """        
-        # Convert the ElementTree to a string with proper indentation
+        # Convert the ElementTree to a string
         xml_str = ET.tostring(self.root, encoding='unicode')
         
         # Add proper indentation
@@ -123,7 +183,7 @@ def get_all_foods_query() -> str:
         str: The XML query string.
     """
     return (
-        BedcaQueryBuilder()
+        BedcaQueryBuilder(level=1)
         .select(
             BedcaAttribute.ID,
             BedcaAttribute.SPANISH_NAME,
@@ -132,7 +192,28 @@ def get_all_foods_query() -> str:
             BedcaAttribute.ORIGIN,
             BedcaAttribute.EDIBLE_PORTION
         )
+        .where(BedcaAttribute.ORIGIN, BedcaRelation.EQUAL, "BEDCA")
         .order(BedcaAttribute.SPANISH_NAME)
+        .build()
+    )
+
+
+def get_food_by_id_query(food_id: int) -> str:
+    """Get the query to fetch detailed food information from BEDCA by ID.
+    
+    Args:
+        food_id: The ID of the food to fetch.
+        
+    Returns:
+        str: The XML query string.
+    """
+    return (
+        BedcaQueryBuilder(level=2)
+        .select(
+            *[attr for attr in BedcaAttribute]  # Select all attributes
+        )
+        .where(BedcaAttribute.ID, BedcaRelation.EQUAL, str(food_id))
+        .order(BedcaAttribute.COMPONENT_GROUP_ID)
         .build()
     )
 
