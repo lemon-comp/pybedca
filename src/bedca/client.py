@@ -1,12 +1,14 @@
 """BEDCA API client implementation."""
 
-import xml.etree.ElementTree as ET
 from typing import List
+import xml.etree.ElementTree as ET
+
 import requests
 
+from .query import BedcaQueryBuilder
 from .models import FoodPreview, Food
 from .parser import parse_food_response
-from .query import get_all_foods_query, get_food_by_id_query
+from .enums import Languages, BedcaRelation, BedcaAttribute
 
 
 class BedcaClient:
@@ -30,9 +32,55 @@ class BedcaClient:
         Returns:
             List[Food]: A list of FoodPreview objects containing basic information about each food item.
         """
-        payload = get_all_foods_query()
+        query = (
+            BedcaQueryBuilder(level=1)
+            .select(
+                BedcaAttribute.ID,
+                BedcaAttribute.SPANISH_NAME,
+                BedcaAttribute.ENGLISH_NAME,
+                BedcaAttribute.ORIGIN,
+            )
+            .where(BedcaAttribute.ORIGIN, BedcaRelation.EQUAL, "BEDCA")
+            .order(BedcaAttribute.SPANISH_NAME)
+            .build()
+        )
 
-        response = self.session.post(self.BASE_URL, headers=self.headers, data=payload)
+        response = self.session.post(self.BASE_URL, headers=self.headers, data=query)
+        response.raise_for_status()  # Raise an exception for HTTP errors
+
+        root = ET.fromstring(response.text)
+        
+        return [
+            FoodPreview(
+                id=food.findtext("f_id"),
+                name_es=food.findtext("f_ori_name"),
+                name_en=food.findtext("f_eng_name"),
+            )
+            for food in root.findall("food")
+        ]
+
+    def search_food_by_name(self, search_query: str, language: Languages = Languages.ES) -> List[FoodPreview]:
+        """Get all food products from BEDCA.
+
+        Returns:
+            List[Food]: A list of FoodPreview objects containing basic information about each food item.
+        """
+        search_attribute = BedcaAttribute.SPANISH_NAME if language == Languages.ES else BedcaAttribute.ENGLISH_NAME
+        query = (
+            BedcaQueryBuilder(level=1)
+            .select(
+                BedcaAttribute.ID,
+                BedcaAttribute.SPANISH_NAME,
+                BedcaAttribute.ENGLISH_NAME,
+                BedcaAttribute.ORIGIN,
+            )
+            .where(search_attribute, BedcaRelation.LIKE, search_query)
+            .where(BedcaAttribute.ORIGIN, BedcaRelation.EQUAL, "BEDCA")
+            .order(search_attribute)
+            .build()
+        )
+
+        response = self.session.post(self.BASE_URL, headers=self.headers, data=query)
         response.raise_for_status()  # Raise an exception for HTTP errors
 
         root = ET.fromstring(response.text)
@@ -58,9 +106,17 @@ class BedcaClient:
         Raises:
             requests.HTTPError: If the request fails.
         """
-        payload = get_food_by_id_query(food_id)
-        
-        response = self.session.post(self.BASE_URL, headers=self.headers, data=payload)
+        query =  (
+            BedcaQueryBuilder(level=2)
+            .select(
+                *[attr for attr in BedcaAttribute]  # Select all attributes
+            )
+            .where(BedcaAttribute.ID, BedcaRelation.EQUAL, str(food_id))
+            .order(BedcaAttribute.COMPONENT_GROUP_ID)
+            .build()
+        )
+
+        response = self.session.post(self.BASE_URL, headers=self.headers, data=query)
         response.raise_for_status()
         
         return parse_food_response(response.text)

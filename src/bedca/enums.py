@@ -118,3 +118,8 @@ class BedcaRelation(StrEnum):
     EQUAL = "EQUAL"
     LIKE = "LIKE"
     BEGINS_WITH = "BEGINW"
+
+
+class Languages(StrEnum):
+    ES = "ES"
+    EN = "EN"
