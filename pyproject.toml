@@ -1,0 +1,19 @@
+[project]
+name = "pybedca"
+version = "0.1.0"
+description = "Python client library to parse BEDCA API XML into Python objects and Pandas DataFrames"
+readme = "README.md"
+authors = [
+  { name = "Lázaro Candea", email = "lazaro@candea.es" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    "requests>=2.32.5",
+]
+
+[dependency-groups]
+dev = [
+    "jupyter>=1.1.1",
+    "pandas>=2.3.2",
+]
