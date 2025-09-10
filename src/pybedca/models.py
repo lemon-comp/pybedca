@@ -1,17 +1,39 @@
 """Models for the BEDCA API client."""
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 from .enums import BedcaComponent
+from .values import Mass, Energy
 
 
 @dataclass
 class FoodValue:
     """Represents a nutritional value for a food component."""
     component: BedcaComponent
-    value: float | str  # str for cases like 'trace'
+    value: Union[Mass, Energy, str]  # str for cases like 'trace'
     unit: str
+    
+    @classmethod
+    def from_raw(cls, component: BedcaComponent, value: Union[float, str], unit: str) -> 'FoodValue':
+        """Create a FoodValue instance from raw values."""
+        if value == 'trace':
+            processed_value = value
+        elif component == BedcaComponent.ENERGY:
+            processed_value = Energy.from_value(value, unit)
+        else:
+            # All other components are measured in mass units
+            processed_value = Mass.from_value(value, unit)
+
+        return cls(component=component, value=processed_value, unit=unit)
+    
+    def __str__(self) -> str:
+        """Return string representation of the food value."""
+        if isinstance(self.value, (Mass, Energy)):
+            return str(self.value)
+        if self.value.lower() == 'trace':
+            return f"Traces {self.unit}"
+        return f"{self.value} {self.unit}"
 
 
 @dataclass

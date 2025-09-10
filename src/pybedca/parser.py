@@ -61,7 +61,7 @@ def parse_food_value(value_element: ET.Element) -> tuple[BedcaComponent, FoodVal
     
     unit = value_element.find(BedcaAttribute.VALUE_UNIT).text
 
-    food_value = FoodValue(
+    food_value = FoodValue.from_raw(
         component=component,
         value=value,
         unit=unit
