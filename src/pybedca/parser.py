@@ -1,7 +1,6 @@
 """XML parser for BEDCA API responses."""
 
 import xml.etree.ElementTree as ET
-from typing import Dict
 
 from .enums import BedcaAttribute, BedcaComponent
 from .models import Food, FoodNutrients, FoodValue
@@ -90,12 +89,17 @@ def parse_food(element: ET.Element) -> Food:
     # Create food nutrients object
     nutrients = FoodNutrients(**nutrient_values)
 
-    # Create and return the food object
+    # Create and return the food object with safe attribute extraction
+    def safe_text(element, attribute):
+        """Safely extract text from an element, returning empty string if None."""
+        found = element.find(attribute)
+        return found.text if found is not None else ""
+    
     return Food(
-        id=element.find(BedcaAttribute.ID).text,
-        name_es=element.find(BedcaAttribute.SPANISH_NAME).text,
-        name_en=element.find(BedcaAttribute.ENGLISH_NAME).text,
-        scientific_name=element.find(BedcaAttribute.SCIENTIFIC_NAME).text,
+        id=safe_text(element, BedcaAttribute.ID),
+        name_es=safe_text(element, BedcaAttribute.SPANISH_NAME),
+        name_en=safe_text(element, BedcaAttribute.ENGLISH_NAME),
+        scientific_name=safe_text(element, BedcaAttribute.SCIENTIFIC_NAME),
         nutrients=nutrients
     )
 
@@ -107,4 +111,10 @@ def parse_food_response(xml_string: str) -> Food:
     if food_element is None:
         raise ValueError("No food element found in XML")
     
-    return parse_food(food_element)
+    food = parse_food(food_element)
+    
+    # Check if the food has meaningful data (non-empty ID)
+    if not food.id or food.id.strip() == "":
+        raise ValueError("Food not found or invalid food ID")
+    
+    return food

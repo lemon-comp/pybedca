@@ -3,19 +3,18 @@ name = "pybedca"
 version = "0.1.0"
 description = "Python client library to parse BEDCA API XML into Python objects and Pandas DataFrames"
 readme = "README.md"
-authors = [
-  { name = "Lázaro Candea", email = "lazaro@candea.es" }
-]
+authors = [{ name = "Lázaro Candea", email = "lazaro@candea.es" }]
 license = { text = "MIT" }
 requires-python = ">=3.12"
-dependencies = [
-    "requests>=2.32.5",
-]
+dependencies = ["requests>=2.32.5"]
 
 [dependency-groups]
-dev = [
-    "jupyter>=1.1.1",
-    "pandas>=2.3.2",
+dev = ["jupyter>=1.1.1", "pandas>=2.3.2"]
+test = [
+    "pytest>=8.4.2",
+    "pytest-cov>=7.0.0",
+    "pytest-mock>=3.15.0",
+    "responses>=0.25.8",
 ]
 
 [project.scripts]
@@ -25,3 +24,38 @@ pybedca = "pybedca:main"
 requires = ["uv_build>=0.8.15,<0.9.0"]
 build-backend = "uv_build"
 
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--verbose",
+    "--tb=short",
+    "--strict-markers",
+    "--strict-config",
+    "--cov=src/pybedca",
+    "--cov-report=html:htmlcov",
+    "--cov-report=term-missing",
+    "--cov-report=xml",
+    "--cov-fail-under=85",
+]
+markers = [
+    "unit: Unit tests that run quickly and don't require external dependencies",
+    "integration: Integration tests that may require network access or external services",
+    "slow: Tests that take a long time to run",
+]
+filterwarnings = ["error", "ignore::UserWarning", "ignore::DeprecationWarning"]
+
+[tool.coverage.run]
+source = ["src/pybedca"]
+omit = ["*/tests/*", "*/test_*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+]
